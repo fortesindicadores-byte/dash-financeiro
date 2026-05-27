@@ -77,6 +77,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .refresh-btn svg { width: 13px; height: 13px; }
 .refresh-status { font-size: 10px; color: var(--text3); height: 12px; transition: color .2s; }
 
+.access-wrap { display: flex; align-items: center; gap: 6px; margin-top: 4px; cursor: default; position: relative; }
+.access-pill {
+  font-size: 10px; font-weight: 600; letter-spacing: .4px;
+  background: rgba(96,165,250,.1); color: var(--blue);
+  border: 1px solid rgba(96,165,250,.2);
+  padding: 2px 9px; border-radius: 20px;
+  user-select: none;
+}
+.access-wrap:hover .access-tooltip { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.access-tooltip {
+  opacity: 0; pointer-events: none; transform: translateY(4px);
+  transition: opacity .15s, transform .15s;
+  position: absolute; top: calc(100% + 8px); right: 0;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px;
+  white-space: nowrap; z-index: 300;
+  font-size: 11px; line-height: 2;
+  color: var(--text2);
+  box-shadow: 0 6px 20px rgba(0,0,0,.5);
+  min-width: 190px;
+}
+.access-tooltip b { color: var(--text); font-weight: 700; }
+.access-tooltip .att { font-size: 9px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--text3); display: block; margin-bottom: 4px; }
+
 .main { padding: 16px; max-width: 1440px; margin: 0 auto; }
 
 /* KPI */
@@ -214,6 +238,15 @@ tr:hover td { background: rgba(255,255,255,.02); }
       <span>Atualizar</span>
     </button>
     <div class="refresh-status" id="refreshStatus"></div>
+    <div class="access-wrap">
+      <div class="access-pill" id="accessPill">— sessões</div>
+      <div class="access-tooltip" id="accessTooltip">
+        <span class="att">Governança de Acesso</span>
+        <div>Total de sessões: <b id="attTotal">—</b></div>
+        <div>Primeiro acesso: <b id="attFirst">—</b></div>
+        <div>Último acesso: <b id="attLast">—</b></div>
+      </div>
+    </div>
     <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
   </div>
 </div>
@@ -812,6 +845,26 @@ if (loadFromStorage()) {
 }
 updateStatusTime();
 setInterval(updateStatusTime, 60000);
+
+// ── ACCESS GOVERNANCE ────────────────────────────────────────
+(function() {
+  const KEY = 'dashboard_acesso_v1';
+  const fmtDate = ts => {
+    const d = new Date(ts);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+  };
+  let rec = {};
+  try { rec = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) {}
+  rec.total = (rec.total || 0) + 1;
+  rec.first = rec.first || Date.now();
+  rec.last  = Date.now();
+  localStorage.setItem(KEY, JSON.stringify(rec));
+
+  document.getElementById('accessPill').textContent  = rec.total + (rec.total === 1 ? ' sessão' : ' sessões');
+  document.getElementById('attTotal').textContent    = rec.total;
+  document.getElementById('attFirst').textContent    = fmtDate(rec.first);
+  document.getElementById('attLast').textContent     = fmtDate(rec.last);
+})();
 
 buildEvChart();
 buildInvChart();
